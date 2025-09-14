@@ -1,0 +1,24 @@
+server:
+  host: "localhost"
+  port: "8080"
+  read_timeout: 30
+  write_timeout: 30
+
+database:
+  host: "localhost"
+  port: "5432"
+  user: "bagr_user"
+  password: "bagr_password"
+  name: "bagr_db"
+  ssl_mode: "disable"
+
+redis:
+  host: "localhost"
+  port: "6379"
+  password: ""
+  db: 0
+
+app:
+  environment: "development"
+  log_level: "info"
+  jwt_secret: "your-super-secret-jwt-key-change-this-in-production"
