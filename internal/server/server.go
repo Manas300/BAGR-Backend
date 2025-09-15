@@ -7,10 +7,12 @@ import (
 	"net/http"
 	"time"
 
+	"bagr-backend/internal/auth"
 	"bagr-backend/internal/config"
 	"bagr-backend/internal/repositories"
 	"bagr-backend/internal/services"
 	"bagr-backend/internal/utils"
+
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 )
@@ -25,6 +27,7 @@ type Server struct {
 // Services holds all service instances
 type Services struct {
 	User *services.UserService
+	Auth *auth.AuthService
 }
 
 // NewServer creates a new server instance
@@ -62,12 +65,21 @@ func (s *Server) Start() error {
 	// Create Gin router
 	router := gin.New()
 
+	// Load HTML templates
+	router.LoadHTMLGlob("templates/*")
+
 	// Add middleware
 	router.Use(LoggerMiddleware())
 	router.Use(RecoveryMiddleware())
 	router.Use(CORSMiddleware())
 	router.Use(RequestIDMiddleware())
 	router.Use(TimeoutMiddleware(30 * time.Second))
+
+	// Add JWT service to context for middleware
+	router.Use(func(c *gin.Context) {
+		c.Set("jwt_service", services.Auth.GetJWTService())
+		c.Next()
+	})
 
 	// Setup routes
 	SetupRoutes(router, controllers)
@@ -116,13 +128,8 @@ func (s *Server) Stop(ctx context.Context) error {
 // initDatabase initializes the database connection
 func (s *Server) initDatabase() error {
 	logger := utils.GetLogger()
-	
-	// For now, we'll skip actual database connection since we don't have a database running
-	// In a real implementation, you would connect to PostgreSQL here
-	logger.Info("Database connection skipped for demo purposes")
-	
-	// Uncomment and modify this when you have a database:
-	/*
+
+	// Connect to PostgreSQL database
 	db, err := sql.Open("postgres", s.config.GetDatabaseURL())
 	if err != nil {
 		return fmt.Errorf("failed to open database connection: %w", err)
@@ -135,8 +142,7 @@ func (s *Server) initDatabase() error {
 
 	s.db = db
 	logger.Info("Database connection established")
-	*/
-	
+
 	return nil
 }
 
@@ -150,8 +156,23 @@ func (s *Server) initRepositories() *repositories.Repositories {
 
 // initServices initializes all services
 func (s *Server) initServices(repos *repositories.Repositories) *Services {
+	// Initialize auth services
+	jwtService := auth.NewJWTService(s.config.JWT.AccessSecret, s.config.JWT.RefreshSecret)
+	passwordService := auth.NewPasswordService()
+	emailService := auth.NewEmailService(auth.EmailConfig{
+		SMTPHost:     s.config.Email.Host,
+		SMTPPort:     s.config.Email.Port,
+		SMTPUsername: s.config.Email.Username,
+		SMTPPassword: s.config.Email.Password,
+		FromEmail:    s.config.Email.FromEmail,
+		FromName:     s.config.Email.FromName,
+		TestMode:     s.config.Email.TestMode, // Use config value
+	})
+	authService := auth.NewAuthService(s.db, jwtService, passwordService, emailService)
+
 	return &Services{
 		User: services.NewUserService(repos.User),
+		Auth: authService,
 		// Add other services here when implemented
 	}
 }

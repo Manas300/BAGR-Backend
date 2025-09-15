@@ -21,4 +21,16 @@ redis:
 app:
   environment: "development"
   log_level: "info"
-  jwt_secret: "your-super-secret-jwt-key-change-this-in-production"
+
+jwt:
+  access_secret: "your-access-secret-key-change-in-production"
+  refresh_secret: "your-refresh-secret-key-change-in-production"
+
+email:
+  host: "smtp.gmail.com"
+  port: "587"
+  username: "manassingh3000@gmail.com"
+  password: "kioqkfecnlkewjwg"
+  from_email: "manassingh3000@gmail.com"
+  from_name: "BAGR Auction System"
+  test_mode: false

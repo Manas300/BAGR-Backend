@@ -15,6 +15,8 @@ type Config struct {
 	Database DatabaseConfig `yaml:"database"`
 	Redis    RedisConfig    `yaml:"redis"`
 	App      AppConfig      `yaml:"app"`
+	JWT      JWTConfig      `yaml:"jwt"`
+	Email    EmailConfig    `yaml:"email"`
 }
 
 // ServerConfig holds HTTP server configuration
@@ -47,7 +49,23 @@ type RedisConfig struct {
 type AppConfig struct {
 	Environment string `yaml:"environment" env:"APP_ENV"`
 	LogLevel    string `yaml:"log_level" env:"LOG_LEVEL"`
-	JWTSecret   string `yaml:"jwt_secret" env:"JWT_SECRET"`
+}
+
+// JWTConfig holds JWT configuration
+type JWTConfig struct {
+	AccessSecret  string `yaml:"access_secret" env:"JWT_ACCESS_SECRET"`
+	RefreshSecret string `yaml:"refresh_secret" env:"JWT_REFRESH_SECRET"`
+}
+
+// EmailConfig holds email configuration
+type EmailConfig struct {
+	Host      string `yaml:"host" env:"EMAIL_HOST"`
+	Port      string `yaml:"port" env:"EMAIL_PORT"`
+	Username  string `yaml:"username" env:"EMAIL_USERNAME"`
+	Password  string `yaml:"password" env:"EMAIL_PASSWORD"`
+	FromEmail string `yaml:"from_email" env:"EMAIL_FROM_EMAIL"`
+	FromName  string `yaml:"from_name" env:"EMAIL_FROM_NAME"`
+	TestMode  bool   `yaml:"test_mode" env:"EMAIL_TEST_MODE"`
 }
 
 // Load loads configuration from file and environment variables
@@ -148,8 +166,38 @@ func loadFromEnv(config *Config) {
 	if logLevel := os.Getenv("LOG_LEVEL"); logLevel != "" {
 		config.App.LogLevel = logLevel
 	}
-	if jwtSecret := os.Getenv("JWT_SECRET"); jwtSecret != "" {
-		config.App.JWTSecret = jwtSecret
+
+	// JWT config
+	if accessSecret := os.Getenv("JWT_ACCESS_SECRET"); accessSecret != "" {
+		config.JWT.AccessSecret = accessSecret
+	}
+	if refreshSecret := os.Getenv("JWT_REFRESH_SECRET"); refreshSecret != "" {
+		config.JWT.RefreshSecret = refreshSecret
+	}
+
+	// Email config
+	if host := os.Getenv("EMAIL_HOST"); host != "" {
+		config.Email.Host = host
+	}
+	if port := os.Getenv("EMAIL_PORT"); port != "" {
+		config.Email.Port = port
+	}
+	if username := os.Getenv("EMAIL_USERNAME"); username != "" {
+		config.Email.Username = username
+	}
+	if password := os.Getenv("EMAIL_PASSWORD"); password != "" {
+		config.Email.Password = password
+	}
+	if fromEmail := os.Getenv("EMAIL_FROM_EMAIL"); fromEmail != "" {
+		config.Email.FromEmail = fromEmail
+	}
+	if fromName := os.Getenv("EMAIL_FROM_NAME"); fromName != "" {
+		config.Email.FromName = fromName
+	}
+	if testMode := os.Getenv("EMAIL_TEST_MODE"); testMode != "" {
+		if val, err := strconv.ParseBool(testMode); err == nil {
+			config.Email.TestMode = val
+		}
 	}
 }
 
@@ -191,6 +239,30 @@ func setDefaults(config *Config) {
 	if config.App.LogLevel == "" {
 		config.App.LogLevel = "info"
 	}
+
+	// JWT defaults
+	if config.JWT.AccessSecret == "" {
+		config.JWT.AccessSecret = "your-access-secret-key-change-in-production"
+	}
+	if config.JWT.RefreshSecret == "" {
+		config.JWT.RefreshSecret = "your-refresh-secret-key-change-in-production"
+	}
+
+	// Email defaults
+	if config.Email.Host == "" {
+		config.Email.Host = "smtp.gmail.com"
+	}
+	if config.Email.Port == "" {
+		config.Email.Port = "587"
+	}
+	if config.Email.FromEmail == "" {
+		config.Email.FromEmail = "manassingh3000@gmail.com"
+	}
+	if config.Email.FromName == "" {
+		config.Email.FromName = "BAGR Auction System"
+	}
+	// TestMode defaults to false (real email sending)
+	// Only set to true if explicitly configured
 }
 
 // GetDatabaseURL returns the database connection URL

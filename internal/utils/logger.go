@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -28,4 +30,11 @@ func GetLogger() *logrus.Logger {
 		InitLogger("info")
 	}
 	return Logger
+}
+
+// GenerateRequestID generates a unique request ID
+func GenerateRequestID() string {
+	bytes := make([]byte, 16)
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
 }
