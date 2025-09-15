@@ -1,255 +1,253 @@
-# BAGR Backend System
+# 🎵 BAGR Backend - Beat Auction & Global Records
 
-A clean, modular Go backend for a bidding/music marketplace application built with modern practices and scalable architecture.
-
-## 🏗️ Architecture
-
-This project follows a clean architecture pattern with clear separation of concerns:
-
-```
-├── cmd/                    # Application entrypoints
-│   └── main.go            # Main application entry
-├── internal/              # Private application code
-│   ├── config/           # Configuration management
-│   ├── controllers/      # HTTP request handlers
-│   ├── models/          # Data models and DTOs
-│   ├── repositories/    # Data access layer
-│   ├── server/          # HTTP server setup and routing
-│   ├── services/        # Business logic layer
-│   └── utils/           # Utility functions and helpers
-├── Dockerfile           # Container configuration
-├── Makefile            # Development and build commands
-├── config.yaml         # Configuration file
-└── env.example         # Environment variables example
-```
+A comprehensive Go-based backend system for a music auction platform with real-time bidding, user authentication, and beat streaming capabilities.
 
 ## 🚀 Features
 
-- **Clean Architecture**: Modular design with clear separation of concerns
-- **HTTP API**: RESTful API built with Gin framework
-- **Configuration Management**: Environment-based configuration with YAML support
-- **Structured Logging**: JSON logging with Logrus
-- **Middleware**: CORS, logging, recovery, request ID, and timeout middleware
-- **Health Checks**: Health and readiness endpoints
-- **Docker Support**: Multi-stage Docker build for production
-- **Development Tools**: Comprehensive Makefile with common tasks
+### 🔐 Authentication System
+- **JWT-based authentication** with access and refresh tokens
+- **Role-based access control** (Admin, Moderator, Producer, Artist, Fan)
+- **Email verification** with HTML templates
+- **Password reset** functionality
+- **Secure password validation** with strength requirements
+- **Comprehensive logging** for debugging and monitoring
 
-## 🛠️ Tech Stack
+### 🎵 Music Auction System
+- **Real-time bidding** with WebSocket support
+- **Beat streaming** capabilities
+- **Auction management** with time-based events
+- **User profiles** and track management
+- **Bid tracking** and history
 
-- **Go 1.21+**: Modern Go with latest features
-- **Gin**: Fast HTTP web framework
-- **PostgreSQL**: Primary database (ready for integration)
-- **Redis**: Caching and session storage (ready for integration)
-- **Logrus**: Structured logging
-- **Docker**: Containerization
+### 🛠️ Technical Features
+- **Clean Architecture** with separation of concerns
+- **PostgreSQL** database with migrations
+- **Redis** for caching and real-time features
+- **Docker** containerization
+- **Comprehensive logging** with structured JSON logs
+- **Email service** with SMTP support
+- **RESTful API** with proper error handling
 
-## 📋 Prerequisites
+## 📁 Project Structure
 
-- Go 1.21 or higher
-- Docker (optional, for containerized deployment)
-- PostgreSQL (for database features)
-- Redis (for caching features)
+```
+BAGR-Backend/
+├── cmd/
+│   └── main.go                 # Application entry point
+├── internal/
+│   ├── auth/                   # Authentication package
+│   │   ├── handlers.go         # HTTP handlers for auth endpoints
+│   │   ├── service.go          # Authentication business logic
+│   │   ├── jwt.go             # JWT token management
+│   │   ├── password.go        # Password validation and hashing
+│   │   └── email.go           # Email service with SMTP
+│   ├── config/
+│   │   └── config.go          # Configuration management
+│   ├── models/
+│   │   ├── user.go            # User model and DTOs
+│   │   ├── auction.go         # Auction model
+│   │   ├── bid.go             # Bid model
+│   │   └── track.go           # Track model
+│   ├── repositories/
+│   │   ├── interfaces.go      # Repository interfaces
+│   │   └── user_repository.go # User data access layer
+│   ├── services/
+│   │   └── user_service.go    # User business logic
+│   ├── server/
+│   │   ├── server.go          # HTTP server setup
+│   │   ├── routes.go          # API route definitions
+│   │   └── middleware.go      # Custom middleware
+│   └── utils/
+│       ├── logger.go          # Logging utilities
+│       └── response.go        # HTTP response helpers
+├── migrations/
+│   ├── 000_base_tables.sql    # Base database schema
+│   └── 001_auth_tables.sql    # Authentication tables
+├── templates/
+│   └── verification_success.html # Email verification template
+├── config.yaml                # Application configuration
+├── docker-compose.yml         # Docker services
+├── Dockerfile                 # Container configuration
+└── go.mod                     # Go module dependencies
+```
 
-## 🏃‍♂️ Quick Start
+## 🛠️ Installation & Setup
 
-### 1. Clone and Setup
+### Prerequisites
+- **Go 1.21+**
+- **PostgreSQL 13+**
+- **Redis 6+**
+- **Docker** (optional)
 
+### 1. Clone the Repository
 ```bash
-git clone <repository-url>
-cd BAGR_Backend_System
+git clone https://github.com/Manas300/BAGR-Backend.git
+cd BAGR-Backend
 ```
 
 ### 2. Install Dependencies
-
 ```bash
-make deps
+go mod tidy
 ```
 
-### 3. Configure Environment
-
-Copy the example environment file and modify as needed:
-
+### 3. Database Setup
 ```bash
-cp env.example .env
-# Edit .env with your configuration
+# Start PostgreSQL and Redis with Docker
+docker-compose up -d
+
+# Run database migrations
+psql -h localhost -U bagr_user -d bagr_db -f migrations/000_base_tables.sql
+psql -h localhost -U bagr_user -d bagr_db -f migrations/001_auth_tables.sql
 ```
 
-### 4. Run the Application
+### 4. Configuration
+Update `config.yaml` with your settings:
+```yaml
+server:
+  host: "localhost"
+  port: 8080
 
-```bash
-# Run with default configuration
-make run
+database:
+  host: "localhost"
+  port: 5432
+  name: "bagr_db"
+  username: "bagr_user"
+  password: "bagr_password"
 
-# Or run with custom config file
-make run-with-config
+jwt:
+  access_secret: "your-access-secret-key"
+  refresh_secret: "your-refresh-secret-key"
+
+email:
+  host: "smtp.gmail.com"
+  port: "587"
+  username: "your-email@gmail.com"
+  password: "your-app-password"
+  from_email: "your-email@gmail.com"
+  from_name: "BAGR Auction System"
+  test_mode: false
 ```
 
-The server will start on `http://localhost:8080`
-
-## 🐳 Docker Deployment
-
-### Build and Run with Docker
-
+### 5. Run the Application
 ```bash
-# Build Docker image
-make docker-build
-
-# Run container
-make docker-run
+go run cmd/main.go -config config.yaml
 ```
 
-### Using Docker Compose (Future)
+## 📚 API Endpoints
+
+### Authentication
+- `POST /api/v1/auth/register` - User registration
+- `POST /api/v1/auth/login` - User login
+- `GET /api/v1/auth/verify` - Email verification
+- `POST /api/v1/auth/forgot-password` - Password reset request
+- `POST /api/v1/auth/reset-password` - Password reset
+- `POST /api/v1/auth/refresh` - Token refresh
+- `GET /api/v1/auth/profile` - Get user profile (protected)
+- `PUT /api/v1/auth/profile` - Update user profile (protected)
+- `POST /api/v1/auth/logout` - User logout
+- `GET /api/v1/auth/roles` - Get available roles
+
+### Health Check
+- `GET /health` - Health check endpoint
+- `GET /ready` - Readiness check endpoint
+
+## 🔧 User Roles
+
+| Role | Description | Permissions |
+|------|-------------|-------------|
+| **Admin** | Platform administrators | Full system access |
+| **Moderator** | Platform moderators | Content moderation, user management |
+| **Producer** | Music creators who sell beats | Create auctions, manage tracks |
+| **Artist** | Music creators who buy beats | Bid on auctions, purchase tracks |
+| **Fan** | General users | View auctions, limited participation |
+
+## 🔐 Authentication Flow
+
+1. **Registration**: User provides email, username, password, and role
+2. **Email Verification**: System sends verification email with token
+3. **Login**: User logs in with verified credentials
+4. **JWT Tokens**: System issues access and refresh tokens
+5. **Protected Routes**: Access with valid JWT token
+
+## 📧 Email System
+
+The system supports both test mode and production email sending:
+
+- **Test Mode**: Logs email content to console (for development)
+- **Production Mode**: Sends actual emails via SMTP
+
+## 🐳 Docker Support
 
 ```bash
-# Start all services (when docker-compose.yml is added)
-make db-up
-make docker-run
+# Build and run with Docker Compose
+docker-compose up --build
+
+# Run in background
+docker-compose up -d
 ```
 
-## 📚 API Documentation
+## 🧪 Testing
 
-### Health Endpoints
-
-- `GET /health` - Health check
-- `GET /ready` - Readiness check
-
-### User Endpoints
-
-- `POST /api/v1/users` - Create user
-- `GET /api/v1/users` - List users (with pagination)
-- `GET /api/v1/users/:id` - Get user by ID
-- `PUT /api/v1/users/:id` - Update user
-- `DELETE /api/v1/users/:id` - Delete user
-
-### Example API Calls
+The project includes comprehensive test suites:
 
 ```bash
-# Health check
-curl http://localhost:8080/health
+# Run all tests
+go test ./...
 
-# Create a user
-curl -X POST http://localhost:8080/api/v1/users \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "john@example.com",
-    "username": "johndoe",
-    "first_name": "John",
-    "last_name": "Doe",
-    "password": "securepassword",
-    "role": "buyer"
-  }'
+# Run with coverage
+go test -cover ./...
 
-# Get user by ID
-curl http://localhost:8080/api/v1/users/1
-
-# List users with pagination
-curl "http://localhost:8080/api/v1/users?limit=10&offset=0"
+# Run integration tests
+cd tests && ./run_all_tests.ps1
 ```
 
-## 🧪 Development
+## 📊 Logging
 
-### Available Make Commands
+The application uses structured JSON logging with different levels:
 
-```bash
-make help                 # Show all available commands
-make run                  # Run the application
-make build               # Build binary
-make test                # Run tests
-make test-coverage       # Run tests with coverage
-make fmt                 # Format code
-make vet                 # Run go vet
-make lint                # Run golangci-lint
-make dev-check           # Run all development checks
-make docker-build        # Build Docker image
-make docker-run          # Run Docker container
-```
+- **INFO**: General application flow
+- **DEBUG**: Detailed debugging information
+- **ERROR**: Error conditions
+- **WARN**: Warning conditions
 
-### Development Workflow
+## 🔧 Development
 
-```bash
-# Setup development environment
-make dev-setup
+### Code Structure
+- **Clean Architecture** with clear separation of concerns
+- **Dependency Injection** for testability
+- **Interface-based design** for flexibility
+- **Comprehensive error handling** throughout
 
-# Run development checks and start server
-make dev-run
-
-# Or run checks individually
-make fmt vet lint test
-```
-
-## 📁 Project Structure Details
-
-### Models
-- `User`: User account management
-- `Auction`: Auction listings
-- `Bid`: Bidding system
-- `Track`: Music track metadata
-
-### Services
-Business logic layer that handles:
-- User management
-- Authentication (ready for implementation)
-- Auction management (ready for implementation)
-- Bidding logic (ready for implementation)
-
-### Repositories
-Data access layer with interfaces for:
-- Database operations
-- Caching operations
-- External API integrations
-
-### Controllers
-HTTP request handlers that:
-- Validate input
-- Call appropriate services
-- Return structured responses
-
-## 🔧 Configuration
-
-The application supports configuration through:
-
-1. **YAML file** (`config.yaml`)
-2. **Environment variables** (`.env` file)
-3. **Command line flags**
-
-Environment variables take precedence over YAML configuration.
-
-### Configuration Options
-
-- **Server**: Host, port, timeouts
-- **Database**: PostgreSQL connection settings
-- **Redis**: Cache configuration
-- **Application**: Environment, logging, JWT secret
-
-## 🚦 Future Enhancements
-
-This project is designed to be easily extensible. Planned features include:
-
-- **Authentication & Authorization**: JWT-based auth system
-- **Auction System**: Complete bidding functionality
-- **Music Library**: Track upload and management
-- **Auto-bidder**: Automated bidding system
-- **WebSocket Support**: Real-time bidding updates
-- **File Upload**: Music file and image handling
-- **Payment Integration**: Payment processing
-- **Email Notifications**: User notifications
-- **Admin Dashboard**: Management interface
+### Adding New Features
+1. Define models in `internal/models/`
+2. Create repository interfaces in `internal/repositories/`
+3. Implement business logic in `internal/services/`
+4. Add HTTP handlers in `internal/server/`
+5. Update routes in `internal/server/routes.go`
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests and linting
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## 👥 Authors
 
-For support and questions:
-- Create an issue in the repository
-- Check the documentation
-- Review the API examples above
+- **Manas Singh** - *Initial work* - [Manas300](https://github.com/Manas300)
+
+## 🙏 Acknowledgments
+
+- Go community for excellent libraries
+- Gin framework for HTTP routing
+- PostgreSQL and Redis for data storage
+- Docker for containerization
+
+---
+
+**Built with ❤️ for the music community**
