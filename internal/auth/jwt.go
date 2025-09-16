@@ -182,3 +182,4 @@ func (j *JWTService) IsTokenExpired(tokenString string) bool {
 	_, err := j.ValidateAccessToken(tokenString)
 	return err != nil
 }
+

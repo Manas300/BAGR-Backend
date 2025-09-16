@@ -73,3 +73,4 @@ COMMENT ON TABLE users IS 'Users table for the auction system';
 COMMENT ON TABLE auctions IS 'Auctions table for music auctions';
 COMMENT ON TABLE bids IS 'Bids table for auction bids';
 COMMENT ON TABLE tracks IS 'Tracks table for music tracks';
+

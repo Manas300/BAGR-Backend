@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BAGR - Direct Verification Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .btn:hover {
+            background: #5a6fd8;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .alert {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 BAGR - Direct Verification Test</h1>
+        
+        <div id="alert"></div>
+        
+        <h3>Step 1: Register New User</h3>
+        <button class="btn" onclick="registerUser()">Register Test User</button>
+        
+        <h3>Step 2: Verify Email</h3>
+        <input type="text" id="token" placeholder="Paste verification token here">
+        <button class="btn" onclick="verifyEmail()">Verify Email</button>
+        
+        <h3>Step 3: Login</h3>
+        <input type="email" id="email" placeholder="Email" value="testuser2@example.com">
+        <input type="password" id="password" placeholder="Password" value="MySecurePass123">
+        <button class="btn" onclick="login()">Login</button>
+        
+        <h3>Step 4: Test Protected Endpoint</h3>
+        <button class="btn" onclick="testProtected()">Test Protected Endpoint</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api/v1';
+        let authToken = null;
+
+        function showAlert(message, type) {
+            document.getElementById('alert').innerHTML = 
+                `<div class="alert alert-${type}">${message}</div>`;
+        }
+
+        async function registerUser() {
+            try {
+                showAlert('Registering user...', 'info');
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'testuser2@example.com',
+                        username: 'testuser2',
+                        first_name: 'Test',
+                        last_name: 'User',
+                        password: 'MySecurePass123',
+                        confirm_password: 'MySecurePass123',
+                        role: 'producer'
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert('Registration successful! Check server console for token.', 'success');
+                    // Get token from database
+                    const tokenResponse = await fetch(`${API_BASE}/auth/verify?token=qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq`, {
+                        method: 'GET'
+                    });
+                    if (tokenResponse.ok) {
+                        showAlert('Token found! You can now verify.', 'success');
+                    }
+                } else {
+                    showAlert(`Registration failed: ${result.error?.message}`, 'error');
+                }
+            } catch (error) {
+                showAlert(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function verifyEmail() {
+            const token = document.getElementById('token').value.trim();
+            if (!token) {
+                showAlert('Please enter a token', 'error');
+                return;
+            }
+
+            try {
+                showAlert('Verifying email...', 'info');
+                const response = await fetch(`${API_BASE}/auth/verify?token=${token}`, {
+                    method: 'GET'
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert('Email verified successfully!', 'success');
+                } else {
+                    showAlert(`Verification failed: ${result.error?.message}`, 'error');
+                }
+            } catch (error) {
+                showAlert(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                showAlert('Logging in...', 'info');
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    authToken = result.data.access_token;
+                    showAlert('Login successful!', 'success');
+                    document.getElementById('result').innerHTML = 
+                        `<h4>User Info:</h4><pre>${JSON.stringify(result.data.user, null, 2)}</pre>`;
+                } else {
+                    showAlert(`Login failed: ${result.error?.message}`, 'error');
+                }
+            } catch (error) {
+                showAlert(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testProtected() {
+            if (!authToken) {
+                showAlert('Please login first', 'error');
+                return;
+            }
+
+            try {
+                showAlert('Testing protected endpoint...', 'info');
+                const response = await fetch(`${API_BASE}/auth/profile`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert('Protected endpoint test successful!', 'success');
+                    document.getElementById('result').innerHTML += 
+                        `<h4>Protected Endpoint Result:</h4><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                } else {
+                    showAlert(`Protected endpoint failed: ${result.error?.message}`, 'error');
+                }
+            } catch (error) {
+                showAlert(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-fill the token
+        document.getElementById('token').value = 'qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq';
+    </script>
+</body>
+</html>
+

@@ -280,7 +280,7 @@ func (a *AuthService) ResetPassword(req *models.ResetPasswordRequest) error {
 	}
 
 	// Hash new password
-	hashedPassword, err := a.passwordService.HashPassword(req.Password)
+	hashedPassword, err := a.passwordService.HashPassword(req.NewPassword)
 	if err != nil {
 		return fmt.Errorf("failed to hash password: %w", err)
 	}

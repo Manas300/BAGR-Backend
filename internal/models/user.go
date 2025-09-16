@@ -51,7 +51,7 @@ type CreateUserRequest struct {
 	FirstName       string   `json:"first_name" binding:"required,min=1,max=100"`
 	LastName        string   `json:"last_name" binding:"required,min=1,max=100"`
 	Password        string   `json:"password" binding:"required,min=8"`
-	ConfirmPassword string   `json:"confirm_password" binding:"required,eqfield=Password"`
+	ConfirmPassword string   `json:"confirm_password" binding:"required,min=8"`
 	Role            UserRole `json:"role" binding:"required,oneof=admin moderator producer artist fan"`
 }
 
@@ -80,37 +80,6 @@ type UserResponse struct {
 	UpdatedAt     time.Time  `json:"updated_at"`
 }
 
-// LoginRequest represents the request payload for user login
-type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
-}
-
-// ForgotPasswordRequest represents the request payload for password reset
-type ForgotPasswordRequest struct {
-	Email string `json:"email" binding:"required,email"`
-}
-
-// ResetPasswordRequest represents the request payload for password reset
-type ResetPasswordRequest struct {
-	Token           string `json:"token" binding:"required"`
-	Password        string `json:"password" binding:"required,min=8"`
-	ConfirmPassword string `json:"confirm_password" binding:"required,eqfield=Password"`
-}
-
-// VerifyEmailRequest represents the request payload for email verification
-type VerifyEmailRequest struct {
-	Token string `json:"token" binding:"required"`
-}
-
-// AuthResponse represents the response payload for authentication
-type AuthResponse struct {
-	User         *UserResponse `json:"user"`
-	AccessToken  string        `json:"access_token"`
-	RefreshToken string        `json:"refresh_token"`
-	ExpiresAt    time.Time     `json:"expires_at"`
-}
-
 // ToResponse converts User to UserResponse
 func (u *User) ToResponse() *UserResponse {
 	return &UserResponse{
@@ -126,4 +95,29 @@ func (u *User) ToResponse() *UserResponse {
 		CreatedAt:     u.CreatedAt,
 		UpdatedAt:     u.UpdatedAt,
 	}
+}
+
+// LoginRequest represents the request payload for user login
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+}
+
+// ForgotPasswordRequest represents the request payload for forgot password
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+// ResetPasswordRequest represents the request payload for reset password
+type ResetPasswordRequest struct {
+	Token       string `json:"token" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+}
+
+// AuthResponse represents the response payload for authentication
+type AuthResponse struct {
+	User         *UserResponse `json:"user"`
+	AccessToken  string        `json:"access_token"`
+	RefreshToken string        `json:"refresh_token"`
+	ExpiresAt    time.Time     `json:"expires_at"`
 }
