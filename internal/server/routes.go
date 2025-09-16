@@ -23,6 +23,7 @@ func SetupRoutes(router *gin.Engine, controllers *Controllers) {
 			auth.POST("/login", controllers.Auth.Login)
 			auth.GET("/verify", controllers.Auth.VerifyEmail)
 			auth.POST("/forgot-password", controllers.Auth.ForgotPassword)
+			auth.GET("/reset-password", controllers.Auth.ResetPasswordPage)
 			auth.POST("/reset-password", controllers.Auth.ResetPassword)
 			auth.POST("/refresh", controllers.Auth.RefreshToken)
 			auth.GET("/roles", controllers.Auth.GetRoles)

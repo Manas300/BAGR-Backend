@@ -110,8 +110,9 @@ type ForgotPasswordRequest struct {
 
 // ResetPasswordRequest represents the request payload for reset password
 type ResetPasswordRequest struct {
-	Token       string `json:"token" binding:"required"`
-	NewPassword string `json:"new_password" binding:"required,min=8"`
+	Token           string `json:"token" binding:"required"`
+	Password        string `json:"password" binding:"required,min=8"`
+	ConfirmPassword string `json:"confirm_password" binding:"required,min=8"`
 }
 
 // AuthResponse represents the response payload for authentication

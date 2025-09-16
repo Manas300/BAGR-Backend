@@ -255,8 +255,8 @@ func (a *AuthService) ForgotPassword(req *models.ForgotPasswordRequest) error {
 		return fmt.Errorf("failed to generate reset token: %w", err)
 	}
 
-	// Store reset token
-	expiresAt := time.Now().Add(1 * time.Hour) // 1 hour expiry
+	// Store reset token (use UTC for consistent timezone handling)
+	expiresAt := time.Now().UTC().Add(1 * time.Hour) // 1 hour expiry
 	err = a.storeResetToken(user.ID, resetToken, expiresAt)
 	if err != nil {
 		return fmt.Errorf("failed to store reset token: %w", err)
@@ -273,14 +273,22 @@ func (a *AuthService) ForgotPassword(req *models.ForgotPasswordRequest) error {
 
 // ResetPassword handles password reset
 func (a *AuthService) ResetPassword(req *models.ResetPasswordRequest) error {
+	logger := utils.GetLogger()
+	logger.WithField("token", req.Token).Info("Attempting to reset password")
+
+	// Validate passwords match
+	if req.Password != req.ConfirmPassword {
+		return fmt.Errorf("passwords do not match")
+	}
+
 	// Get user by reset token
-	userID, err := a.getResetTokenUserID(req.Token)
+	userID, err := a.GetResetTokenUserID(req.Token)
 	if err != nil {
 		return fmt.Errorf("invalid or expired reset token")
 	}
 
 	// Hash new password
-	hashedPassword, err := a.passwordService.HashPassword(req.NewPassword)
+	hashedPassword, err := a.passwordService.HashPassword(req.Password)
 	if err != nil {
 		return fmt.Errorf("failed to hash password: %w", err)
 	}
@@ -295,9 +303,10 @@ func (a *AuthService) ResetPassword(req *models.ResetPasswordRequest) error {
 	err = a.markResetTokenUsed(req.Token)
 	if err != nil {
 		// Log error but don't fail reset
-		fmt.Printf("Warning: Failed to mark reset token as used: %v\n", err)
+		logger.WithError(err).Warn("Failed to mark reset token as used after successful password reset")
 	}
 
+	logger.WithField("user_id", userID).Info("Password reset successful")
 	return nil
 }
 
@@ -423,7 +432,7 @@ func (a *AuthService) storeVerificationToken(userID int, token string) error {
 		INSERT INTO email_verifications (user_id, token, expires_at)
 		VALUES ($1, $2, $3)`
 
-	expiresAt := time.Now().Add(24 * time.Hour) // 24 hours expiry
+	expiresAt := time.Now().UTC().Add(24 * time.Hour) // 24 hours expiry
 	_, err := a.db.Exec(query, userID, token, expiresAt)
 	return err
 }
@@ -442,8 +451,8 @@ func (a *AuthService) getVerificationUserID(token string) (int, error) {
 		return 0, err
 	}
 
-	// Check if token is expired
-	if time.Now().After(expiresAt) {
+	// Check if token is expired (use UTC for consistent comparison)
+	if time.Now().UTC().After(expiresAt) {
 		return 0, errors.New("token expired")
 	}
 
@@ -457,15 +466,39 @@ func (a *AuthService) markVerificationTokenUsed(token string) error {
 }
 
 func (a *AuthService) storeResetToken(userID int, token string, expiresAt time.Time) error {
+	logger := utils.GetLogger()
+	
+	logger.WithFields(map[string]interface{}{
+		"user_id":    userID,
+		"token":      token,
+		"expires_at": expiresAt,
+	}).Info("Storing reset token in database")
+
 	query := `
 		INSERT INTO password_resets (user_id, token, expires_at)
 		VALUES ($1, $2, $3)`
 
 	_, err := a.db.Exec(query, userID, token, expiresAt)
-	return err
+	if err != nil {
+		logger.WithError(err).WithFields(map[string]interface{}{
+			"user_id": userID,
+			"token":   token,
+		}).Error("Failed to store reset token in database")
+		return err
+	}
+
+	logger.WithFields(map[string]interface{}{
+		"user_id": userID,
+		"token":   token,
+	}).Info("Reset token stored successfully in database")
+	return nil
 }
 
-func (a *AuthService) getResetTokenUserID(token string) (int, error) {
+func (a *AuthService) GetResetTokenUserID(token string) (int, error) {
+	logger := utils.GetLogger()
+	
+	logger.WithField("token", token).Info("Looking up reset token in database")
+
 	var userID int
 	var expiresAt time.Time
 
@@ -476,14 +509,31 @@ func (a *AuthService) getResetTokenUserID(token string) (int, error) {
 
 	err := a.db.QueryRow(query, token).Scan(&userID, &expiresAt)
 	if err != nil {
+		logger.WithError(err).WithField("token", token).Error("Failed to find reset token in database")
 		return 0, err
 	}
 
-	// Check if token is expired
-	if time.Now().After(expiresAt) {
+	logger.WithFields(map[string]interface{}{
+		"user_id":    userID,
+		"expires_at": expiresAt,
+		"token":      token,
+	}).Info("Found reset token in database")
+
+	// Check if token is expired (use UTC for consistent comparison)
+	now := time.Now().UTC()
+	if now.After(expiresAt) {
+		logger.WithFields(map[string]interface{}{
+			"token":      token,
+			"expires_at": expiresAt,
+			"now":        now,
+		}).Warn("Reset token has expired")
 		return 0, errors.New("token expired")
 	}
 
+	logger.WithFields(map[string]interface{}{
+		"user_id": userID,
+		"token":   token,
+	}).Info("Reset token is valid and not expired")
 	return userID, nil
 }
 

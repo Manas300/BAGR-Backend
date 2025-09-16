@@ -140,22 +140,53 @@ func (h *AuthHandlers) ForgotPassword(c *gin.Context) {
 	})
 }
 
+// ResetPasswordPage handles password reset page display
+// GET /api/v1/auth/reset-password?token=xxx
+func (h *AuthHandlers) ResetPasswordPage(c *gin.Context) {
+	token := c.Query("token")
+	if token == "" {
+		// Return HTML page for password reset
+		c.HTML(http.StatusOK, "reset_password.html", gin.H{
+			"title": "Reset Password - BAGR Auction System",
+			"error": "Missing reset token",
+		})
+		return
+	}
+
+	// Return HTML page with token - validation will happen on form submission
+	c.HTML(http.StatusOK, "reset_password.html", gin.H{
+		"title": "Reset Password - BAGR Auction System",
+		"token": token,
+	})
+}
+
 // ResetPassword handles password reset
 // POST /api/v1/auth/reset-password
 func (h *AuthHandlers) ResetPassword(c *gin.Context) {
+	logger := utils.GetLogger()
+	
 	var req models.ResetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.WithError(err).Error("Failed to bind reset password request JSON")
 		utils.ErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request data", err.Error())
 		return
 	}
 
+	logger.WithFields(map[string]interface{}{
+		"token_length": len(req.Token),
+		"has_password": len(req.Password) > 0,
+		"has_confirm":  len(req.ConfirmPassword) > 0,
+	}).Info("Processing password reset request")
+
 	// Reset password
 	err := h.authService.ResetPassword(&req)
 	if err != nil {
+		logger.WithError(err).WithField("token", req.Token).Error("Password reset failed")
 		utils.ErrorResponse(c, http.StatusBadRequest, "PASSWORD_RESET_FAILED", "Password reset failed", err.Error())
 		return
 	}
 
+	logger.WithField("token", req.Token).Info("Password reset successful")
 	utils.SuccessResponse(c, http.StatusOK, "Password reset successful", gin.H{
 		"message": "Your password has been successfully reset. You can now log in with your new password.",
 	})
