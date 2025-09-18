@@ -17,6 +17,7 @@ type Config struct {
 	App      AppConfig      `yaml:"app"`
 	JWT      JWTConfig      `yaml:"jwt"`
 	Email    EmailConfig    `yaml:"email"`
+	S3       S3Config       `yaml:"s3"`
 }
 
 // ServerConfig holds HTTP server configuration
@@ -59,13 +60,21 @@ type JWTConfig struct {
 
 // EmailConfig holds email configuration
 type EmailConfig struct {
-	Host      string `yaml:"host" env:"EMAIL_HOST"`
-	Port      string `yaml:"port" env:"EMAIL_PORT"`
-	Username  string `yaml:"username" env:"EMAIL_USERNAME"`
-	Password  string `yaml:"password" env:"EMAIL_PASSWORD"`
-	FromEmail string `yaml:"from_email" env:"EMAIL_FROM_EMAIL"`
-	FromName  string `yaml:"from_name" env:"EMAIL_FROM_NAME"`
-	TestMode  bool   `yaml:"test_mode" env:"EMAIL_TEST_MODE"`
+	ClientID     string `yaml:"client_id" env:"EMAIL_CLIENT_ID"`
+	ClientSecret string `yaml:"client_secret" env:"EMAIL_CLIENT_SECRET"`
+	TenantID     string `yaml:"tenant_id" env:"EMAIL_TENANT_ID"`
+	FromEmail    string `yaml:"from_email" env:"EMAIL_FROM_EMAIL"`
+	FromName     string `yaml:"from_name" env:"EMAIL_FROM_NAME"`
+	TestMode     bool   `yaml:"test_mode" env:"EMAIL_TEST_MODE"`
+}
+
+// S3Config holds AWS S3 configuration
+type S3Config struct {
+	Region          string `yaml:"region" env:"S3_REGION"`
+	Bucket          string `yaml:"bucket" env:"S3_BUCKET"`
+	AccessKeyID     string `yaml:"access_key_id" env:"S3_ACCESS_KEY_ID"`
+	SecretAccessKey string `yaml:"secret_access_key" env:"S3_SECRET_ACCESS_KEY"`
+	BaseURL         string `yaml:"base_url" env:"S3_BASE_URL"`
 }
 
 // Load loads configuration from file and environment variables
@@ -176,17 +185,14 @@ func loadFromEnv(config *Config) {
 	}
 
 	// Email config
-	if host := os.Getenv("EMAIL_HOST"); host != "" {
-		config.Email.Host = host
+	if clientID := os.Getenv("EMAIL_CLIENT_ID"); clientID != "" {
+		config.Email.ClientID = clientID
 	}
-	if port := os.Getenv("EMAIL_PORT"); port != "" {
-		config.Email.Port = port
+	if clientSecret := os.Getenv("EMAIL_CLIENT_SECRET"); clientSecret != "" {
+		config.Email.ClientSecret = clientSecret
 	}
-	if username := os.Getenv("EMAIL_USERNAME"); username != "" {
-		config.Email.Username = username
-	}
-	if password := os.Getenv("EMAIL_PASSWORD"); password != "" {
-		config.Email.Password = password
+	if tenantID := os.Getenv("EMAIL_TENANT_ID"); tenantID != "" {
+		config.Email.TenantID = tenantID
 	}
 	if fromEmail := os.Getenv("EMAIL_FROM_EMAIL"); fromEmail != "" {
 		config.Email.FromEmail = fromEmail
@@ -198,6 +204,23 @@ func loadFromEnv(config *Config) {
 		if val, err := strconv.ParseBool(testMode); err == nil {
 			config.Email.TestMode = val
 		}
+	}
+
+	// S3 config
+	if region := os.Getenv("S3_REGION"); region != "" {
+		config.S3.Region = region
+	}
+	if bucket := os.Getenv("S3_BUCKET"); bucket != "" {
+		config.S3.Bucket = bucket
+	}
+	if accessKeyID := os.Getenv("S3_ACCESS_KEY_ID"); accessKeyID != "" {
+		config.S3.AccessKeyID = accessKeyID
+	}
+	if secretAccessKey := os.Getenv("S3_SECRET_ACCESS_KEY"); secretAccessKey != "" {
+		config.S3.SecretAccessKey = secretAccessKey
+	}
+	if baseURL := os.Getenv("S3_BASE_URL"); baseURL != "" {
+		config.S3.BaseURL = baseURL
 	}
 }
 
@@ -249,20 +272,22 @@ func setDefaults(config *Config) {
 	}
 
 	// Email defaults
-	if config.Email.Host == "" {
-		config.Email.Host = "smtp.gmail.com"
-	}
-	if config.Email.Port == "" {
-		config.Email.Port = "587"
-	}
 	if config.Email.FromEmail == "" {
-		config.Email.FromEmail = "manassingh3000@gmail.com"
+		config.Email.FromEmail = "admin@bagr.app"
 	}
 	if config.Email.FromName == "" {
 		config.Email.FromName = "BAGR Auction System"
 	}
 	// TestMode defaults to false (real email sending)
 	// Only set to true if explicitly configured
+
+	// S3 defaults
+	if config.S3.Region == "" {
+		config.S3.Region = "us-east-1"
+	}
+	if config.S3.Bucket == "" {
+		config.S3.Bucket = "bagr-profile-images"
+	}
 }
 
 // GetDatabaseURL returns the database connection URL

@@ -3,6 +3,7 @@ package server
 import (
 	"bagr-backend/internal/auth"
 	"bagr-backend/internal/controllers"
+	"bagr-backend/internal/handlers"
 
 	"github.com/gin-gonic/gin"
 )
@@ -51,6 +52,14 @@ func SetupRoutes(router *gin.Engine, controllers *Controllers) {
 				users.DELETE("/:id", controllers.User.DeleteUser)
 			}
 
+			// Profile routes (protected)
+			profile := protected.Group("/profile")
+			{
+				profile.GET("", controllers.Profile.GetProfile)
+				profile.PUT("", controllers.Profile.UpdateProfile)
+				profile.POST("/image", controllers.Profile.UploadProfileImage)
+			}
+
 			// Future protected routes can be added here:
 			// auctions := protected.Group("/auctions")
 			// bids := protected.Group("/bids")
@@ -61,16 +70,18 @@ func SetupRoutes(router *gin.Engine, controllers *Controllers) {
 
 // Controllers holds all controller instances
 type Controllers struct {
-	Health *controllers.HealthController
-	User   *controllers.UserController
-	Auth   *auth.AuthHandlers
+	Health  *controllers.HealthController
+	User    *controllers.UserController
+	Auth    *auth.AuthHandlers
+	Profile *handlers.ProfileHandlers
 }
 
 // NewControllers creates and returns all controller instances
 func NewControllers(services *Services) *Controllers {
 	return &Controllers{
-		Health: controllers.NewHealthController(),
-		User:   controllers.NewUserController(services.User),
-		Auth:   auth.NewAuthHandlers(services.Auth),
+		Health:  controllers.NewHealthController(),
+		User:    controllers.NewUserController(services.User),
+		Auth:    auth.NewAuthHandlers(services.Auth),
+		Profile: handlers.NewProfileHandlers(services.Profile, services.S3, services.Logger),
 	}
 }

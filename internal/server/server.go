@@ -14,6 +14,7 @@ import (
 	"bagr-backend/internal/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	_ "github.com/lib/pq"
 )
 
@@ -26,8 +27,11 @@ type Server struct {
 
 // Services holds all service instances
 type Services struct {
-	User *services.UserService
-	Auth *auth.AuthService
+	User    *services.UserService
+	Auth    *auth.AuthService
+	Profile *services.ProfileService
+	S3      *services.S3Service
+	Logger  *logrus.Logger
 }
 
 // NewServer creates a new server instance
@@ -156,23 +160,43 @@ func (s *Server) initRepositories() *repositories.Repositories {
 
 // initServices initializes all services
 func (s *Server) initServices(repos *repositories.Repositories) *Services {
+	// Initialize logger
+	logger := utils.GetLogger()
+
 	// Initialize auth services
 	jwtService := auth.NewJWTService(s.config.JWT.AccessSecret, s.config.JWT.RefreshSecret)
 	passwordService := auth.NewPasswordService()
 	emailService := auth.NewEmailService(auth.EmailConfig{
-		SMTPHost:     s.config.Email.Host,
-		SMTPPort:     s.config.Email.Port,
-		SMTPUsername: s.config.Email.Username,
-		SMTPPassword: s.config.Email.Password,
+		ClientID:     s.config.Email.ClientID,
+		ClientSecret: s.config.Email.ClientSecret,
+		TenantID:     s.config.Email.TenantID,
 		FromEmail:    s.config.Email.FromEmail,
 		FromName:     s.config.Email.FromName,
 		TestMode:     s.config.Email.TestMode, // Use config value
 	})
 	authService := auth.NewAuthService(s.db, jwtService, passwordService, emailService)
 
+	// Initialize S3 service
+	s3Service, err := services.NewS3Service(
+		s.config.S3.Region,
+		s.config.S3.Bucket,
+		s.config.S3.AccessKeyID,
+		s.config.S3.SecretAccessKey,
+		s.config.S3.BaseURL,
+		logger,
+	)
+	if err != nil {
+		logger.WithError(err).Fatal("Failed to initialize S3 service")
+	}
+
+	// Initialize profile service
+	profileService := services.NewProfileService(s.db, logger)
+
 	return &Services{
-		User: services.NewUserService(repos.User),
-		Auth: authService,
-		// Add other services here when implemented
+		User:    services.NewUserService(repos.User),
+		Auth:    authService,
+		Profile: profileService,
+		S3:      s3Service,
+		Logger:  logger,
 	}
 }

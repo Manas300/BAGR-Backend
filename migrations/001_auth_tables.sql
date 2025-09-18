@@ -57,3 +57,5 @@ COMMENT ON COLUMN users.last_login_at IS 'Timestamp of last successful login';
 COMMENT ON TABLE email_verifications IS 'Stores email verification tokens for new user registrations';
 COMMENT ON TABLE password_resets IS 'Stores password reset tokens for forgot password functionality';
 
+
+

@@ -11,15 +11,15 @@ type User struct {
 	Username          string     `json:"username" db:"username"`
 	FirstName         string     `json:"first_name" db:"first_name"`
 	LastName          string     `json:"last_name" db:"last_name"`
-	Password          string     `json:"-" db:"password"`      // Never expose password in JSON
-	PasswordHash      string     `json:"-" db:"password_hash"` // Hashed password for auth
-	Role              UserRole   `json:"role" db:"role"`
-	Status            UserStatus `json:"status" db:"status"`
+	Password          string     `json:"-" db:"password"` // Never expose password in JSON
+	PasswordHash      string     `json:"-" db:"password_hash"`
 	EmailVerified     bool       `json:"email_verified" db:"email_verified"`
 	VerificationToken *string    `json:"-" db:"verification_token"`
 	ResetToken        *string    `json:"-" db:"reset_token"`
 	ResetTokenExpires *time.Time `json:"-" db:"reset_token_expires"`
 	LastLoginAt       *time.Time `json:"last_login_at" db:"last_login_at"`
+	Role              UserRole   `json:"role" db:"role"`
+	Status            UserStatus `json:"status" db:"status"`
 	CreatedAt         time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt         time.Time  `json:"updated_at" db:"updated_at"`
 }
@@ -46,13 +46,12 @@ const (
 
 // CreateUserRequest represents the request payload for creating a user
 type CreateUserRequest struct {
-	Email           string   `json:"email" binding:"required,email"`
-	Username        string   `json:"username" binding:"required,min=3,max=50"`
-	FirstName       string   `json:"first_name" binding:"required,min=1,max=100"`
-	LastName        string   `json:"last_name" binding:"required,min=1,max=100"`
-	Password        string   `json:"password" binding:"required,min=8"`
-	ConfirmPassword string   `json:"confirm_password" binding:"required,min=8"`
-	Role            UserRole `json:"role" binding:"required,oneof=admin moderator producer artist fan"`
+	Email     string   `json:"email" binding:"required,email"`
+	Username  string   `json:"username" binding:"required,min=3,max=50"`
+	FirstName string   `json:"first_name" binding:"required,min=1,max=100"`
+	LastName  string   `json:"last_name" binding:"required,min=1,max=100"`
+	Password  string   `json:"password" binding:"required,min=8"`
+	Role      UserRole `json:"role" binding:"required,oneof=admin artist buyer"`
 }
 
 // UpdateUserRequest represents the request payload for updating a user
@@ -61,40 +60,44 @@ type UpdateUserRequest struct {
 	Username  *string     `json:"username,omitempty" binding:"omitempty,min=3,max=50"`
 	FirstName *string     `json:"first_name,omitempty" binding:"omitempty,min=1,max=100"`
 	LastName  *string     `json:"last_name,omitempty" binding:"omitempty,min=1,max=100"`
-	Role      *UserRole   `json:"role,omitempty" binding:"omitempty,oneof=admin moderator producer artist fan"`
+	Role      *UserRole   `json:"role,omitempty" binding:"omitempty,oneof=admin artist buyer"`
 	Status    *UserStatus `json:"status,omitempty" binding:"omitempty,oneof=active inactive suspended"`
 }
 
 // UserResponse represents the response payload for user data
 type UserResponse struct {
-	ID            int        `json:"id"`
-	Email         string     `json:"email"`
-	Username      string     `json:"username"`
-	FirstName     string     `json:"first_name"`
-	LastName      string     `json:"last_name"`
-	Role          UserRole   `json:"role"`
-	Status        UserStatus `json:"status"`
-	EmailVerified bool       `json:"email_verified"`
-	LastLoginAt   *time.Time `json:"last_login_at"`
-	CreatedAt     time.Time  `json:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at"`
+	ID        int        `json:"id"`
+	Email     string     `json:"email"`
+	Username  string     `json:"username"`
+	FirstName string     `json:"first_name"`
+	LastName  string     `json:"last_name"`
+	Role      UserRole   `json:"role"`
+	Status    UserStatus `json:"status"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 }
 
 // ToResponse converts User to UserResponse
 func (u *User) ToResponse() *UserResponse {
 	return &UserResponse{
-		ID:            u.ID,
-		Email:         u.Email,
-		Username:      u.Username,
-		FirstName:     u.FirstName,
-		LastName:      u.LastName,
-		Role:          u.Role,
-		Status:        u.Status,
-		EmailVerified: u.EmailVerified,
-		LastLoginAt:   u.LastLoginAt,
-		CreatedAt:     u.CreatedAt,
-		UpdatedAt:     u.UpdatedAt,
+		ID:        u.ID,
+		Email:     u.Email,
+		Username:  u.Username,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		Role:      u.Role,
+		Status:    u.Status,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
 	}
+}
+
+// AuthResponse represents the response payload for authentication
+type AuthResponse struct {
+	AccessToken  string       `json:"access_token"`
+	RefreshToken string       `json:"refresh_token"`
+	ExpiresAt    time.Time    `json:"expires_at"`
+	User         *UserResponse `json:"user"`
 }
 
 // LoginRequest represents the request payload for user login
@@ -112,13 +115,5 @@ type ForgotPasswordRequest struct {
 type ResetPasswordRequest struct {
 	Token           string `json:"token" binding:"required"`
 	Password        string `json:"password" binding:"required,min=8"`
-	ConfirmPassword string `json:"confirm_password" binding:"required,min=8"`
-}
-
-// AuthResponse represents the response payload for authentication
-type AuthResponse struct {
-	User         *UserResponse `json:"user"`
-	AccessToken  string        `json:"access_token"`
-	RefreshToken string        `json:"refresh_token"`
-	ExpiresAt    time.Time     `json:"expires_at"`
+	ConfirmPassword string `json:"confirm_password" binding:"required"`
 }

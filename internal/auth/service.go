@@ -467,7 +467,7 @@ func (a *AuthService) markVerificationTokenUsed(token string) error {
 
 func (a *AuthService) storeResetToken(userID int, token string, expiresAt time.Time) error {
 	logger := utils.GetLogger()
-	
+
 	logger.WithFields(map[string]interface{}{
 		"user_id":    userID,
 		"token":      token,
@@ -496,7 +496,7 @@ func (a *AuthService) storeResetToken(userID int, token string, expiresAt time.T
 
 func (a *AuthService) GetResetTokenUserID(token string) (int, error) {
 	logger := utils.GetLogger()
-	
+
 	logger.WithField("token", token).Info("Looking up reset token in database")
 
 	var userID int
