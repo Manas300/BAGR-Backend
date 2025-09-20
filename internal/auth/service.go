@@ -277,7 +277,7 @@ func (a *AuthService) ResetPassword(req *models.ResetPasswordRequest) error {
 	logger.WithField("token", req.Token).Info("Attempting to reset password")
 
 	// Validate passwords match
-	if req.Password != req.ConfirmPassword {
+	if req.NewPassword != req.ConfirmPassword {
 		return fmt.Errorf("passwords do not match")
 	}
 
@@ -288,7 +288,7 @@ func (a *AuthService) ResetPassword(req *models.ResetPasswordRequest) error {
 	}
 
 	// Hash new password
-	hashedPassword, err := a.passwordService.HashPassword(req.Password)
+	hashedPassword, err := a.passwordService.HashPassword(req.NewPassword)
 	if err != nil {
 		return fmt.Errorf("failed to hash password: %w", err)
 	}

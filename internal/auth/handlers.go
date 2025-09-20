@@ -174,7 +174,7 @@ func (h *AuthHandlers) ResetPassword(c *gin.Context) {
 
 	logger.WithFields(map[string]interface{}{
 		"token_length": len(req.Token),
-		"has_password": len(req.Password) > 0,
+		"has_password": len(req.NewPassword) > 0,
 		"has_confirm":  len(req.ConfirmPassword) > 0,
 	}).Info("Processing password reset request")
 

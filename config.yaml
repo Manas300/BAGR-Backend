@@ -27,9 +27,9 @@ jwt:
   refresh_secret: "your-refresh-secret-key-change-in-production"
 
 email:
-  client_id: "YOUR_AZURE_CLIENT_ID"
-  client_secret: "YOUR_AZURE_CLIENT_SECRET"
-  tenant_id: "YOUR_AZURE_TENANT_ID"
+  client_id: "${AZURE_CLIENT_ID}"
+  client_secret: "${AZURE_CLIENT_SECRET}"
+  tenant_id: "${AZURE_TENANT_ID}"
   from_email: "admin@bagr.app"
   from_name: "BAGR Auction System"
   test_mode: false
@@ -37,6 +37,6 @@ email:
 s3:
   region: "us-east-1"
   bucket: "bagr-profile-images"
-  access_key_id: "YOUR_AWS_ACCESS_KEY_ID"
-  secret_access_key: "YOUR_AWS_SECRET_ACCESS_KEY"
+  access_key_id: "${AWS_ACCESS_KEY_ID}"
+  secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
   base_url: "https://bagr-profile-images.s3.amazonaws.com"
